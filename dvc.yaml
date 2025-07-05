@@ -28,6 +28,7 @@ stages:
       - services/evaluate/evaluate.py
       - models
       - metrics
-
+    outs:
+      - production
 
 

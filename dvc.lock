@@ -43,20 +43,3 @@ stages:
       md5: 54d2293bfd0798482d2888be4e1b6afe.dir
       size: 515659
       nfiles: 1
-  evaluate:
-    cmd: python services/evaluate/evaluate.py
-    deps:
-    - path: metrics
-      hash: md5
-      md5: 4520abc4144aa5380bba607b0bc5c6ee.dir
-      size: 265
-      nfiles: 1
-    - path: models
-      hash: md5
-      md5: 54d2293bfd0798482d2888be4e1b6afe.dir
-      size: 515659
-      nfiles: 1
-    - path: services/evaluate/evaluate.py
-      hash: md5
-      md5: 95393fdf945eae48c892d36a67ba6f10
-      size: 3647

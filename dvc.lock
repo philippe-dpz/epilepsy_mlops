@@ -19,7 +19,9 @@ stages:
       size: 1152512
       nfiles: 4
   train:
-    cmd: python services/model_training/train.py
+    cmd: "python services/model_training/train.py --data_path data/processed --model_path
+      models/epilepsy_model.keras --metrics_path metrics/model_metrics.json --epochs
+      10 --batch_size 15\n"
     deps:
     - path: data/processed
       hash: md5
@@ -28,16 +30,16 @@ stages:
       nfiles: 4
     - path: services/model_training/train.py
       hash: md5
-      md5: 254c32abb6bcf84ea1207ed7767d3908
-      size: 4025
+      md5: 8225f845d4674c4d7c6ab8addafb69a0
+      size: 3801
     outs:
     - path: metrics
       hash: md5
-      md5: b38fa4fd78b89ed029a491f577745327.dir
-      size: 298
+      md5: 4520abc4144aa5380bba607b0bc5c6ee.dir
+      size: 265
       nfiles: 1
     - path: models
       hash: md5
-      md5: 053a25605e484902471a2c951dfb8653.dir
+      md5: 54d2293bfd0798482d2888be4e1b6afe.dir
       size: 515659
       nfiles: 1

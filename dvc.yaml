@@ -8,7 +8,13 @@ stages:
       - data/processed
 
   train:
-    cmd: python services/model_training/train.py
+    cmd: >
+      python services/model_training/train.py
+      --data_path data/processed
+      --model_path models/epilepsy_model.keras
+      --metrics_path metrics/model_metrics.json
+      --epochs 10
+      --batch_size 15
     deps:
       - data/processed
       - services/model_training/train.py

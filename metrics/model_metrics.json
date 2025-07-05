@@ -1,1 +1,0 @@
-{"model_path": "C:\\Users\\phili\\Epilepsy_detection_MLOps\\models\\epilepsy_model.keras", "metrics": {"train_accuracy": 0.9359375238418579, "val_accuracy": 0.9437500238418579, "train_loss": 0.2049417793750763, "val_loss": 0.19740645587444305, "epochs": 20, "batch_size": 15, "architecture": "2xLSTM_+_Dense"}}

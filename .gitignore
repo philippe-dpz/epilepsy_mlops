@@ -1,2 +1,4 @@
 /models
 /metrics
+/production
+mlruns/

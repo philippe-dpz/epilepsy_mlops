@@ -21,3 +21,13 @@ stages:
     outs:
       - models
       - metrics
+
+  evaluate:
+    cmd: python services/evaluate/evaluate.py
+    deps:
+      - services/evaluate/evaluate.py
+      - models
+      - metrics
+
+
+

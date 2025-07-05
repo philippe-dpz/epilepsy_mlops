@@ -1,0 +1,19 @@
+artifact_path: epilepsy_model
+flavors:
+  keras:
+    data: data
+    keras_backend: tensorflow
+    keras_version: 3.9.1
+    save_exported_model: false
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.keras
+    python_version: 3.9.21
+mlflow_version: 2.21.2
+model_size_bytes: 515664
+model_uuid: daaa17cf6ae34e41911eebb2888183ad
+prompts: null
+run_id: ef6fa7bd104447b19ab843c795468a70
+utc_time_created: '2025-07-05 10:39:25.663636'

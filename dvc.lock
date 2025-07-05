@@ -1,0 +1,43 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python services/preprocessing/preprocessing.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 1fa52dc037f0c653778c6722e221c683.dir
+      size: 7623837
+      nfiles: 1
+    - path: services/preprocessing/preprocessing.py
+      hash: md5
+      md5: 06c7291f47247c6ec51d5d2a04b6d8a0
+      size: 3740
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 092e1557043e43d4e4c345a00e11d64f.dir
+      size: 1152512
+      nfiles: 4
+  train:
+    cmd: python services/model_training/train.py
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 092e1557043e43d4e4c345a00e11d64f.dir
+      size: 1152512
+      nfiles: 4
+    - path: services/model_training/train.py
+      hash: md5
+      md5: 254c32abb6bcf84ea1207ed7767d3908
+      size: 4025
+    outs:
+    - path: metrics
+      hash: md5
+      md5: b38fa4fd78b89ed029a491f577745327.dir
+      size: 298
+      nfiles: 1
+    - path: models
+      hash: md5
+      md5: 053a25605e484902471a2c951dfb8653.dir
+      size: 515659
+      nfiles: 1

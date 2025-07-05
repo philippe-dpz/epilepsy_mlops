@@ -1,0 +1,17 @@
+stages:
+  preprocess:
+    cmd: python services/preprocessing/preprocessing.py
+    deps:
+      - data/raw
+      - services/preprocessing/preprocessing.py
+    outs:
+      - data/processed
+
+  train:
+    cmd: python services/model_training/train.py
+    deps:
+      - data/processed
+      - services/model_training/train.py
+    outs:
+      - models
+      - metrics

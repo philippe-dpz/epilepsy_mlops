@@ -3,7 +3,6 @@ stages:
     cmd: python services/preprocessing/preprocessing.py
     deps:
       - data/raw
-      - services/preprocessing/preprocessing.py
     outs:
       - data/processed
       - data/patients
@@ -11,7 +10,6 @@ stages:
   patient_data_pull:
     cmd: python services/patient_data_pull/patient_data_pull.py
     deps:
-      - services/patient_data_pull/patient_data_pull.py
       - data/patients
     outs:
       - data/patients_inference
@@ -26,7 +24,6 @@ stages:
       --batch_size 15
     deps:
       - data/processed
-      - services/model_training/train.py
     outs:
       - models
       - metrics
@@ -34,10 +31,7 @@ stages:
   evaluate:
     cmd: python services/evaluate/evaluate.py
     deps:
-      - services/evaluate/evaluate.py
       - models
       - metrics
     outs:
       - production
-
-

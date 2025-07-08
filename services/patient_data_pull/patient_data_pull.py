@@ -3,8 +3,8 @@ import pandas as pd
 
 # Set paths
 BASE_DATA_PATH = os.getenv("DATA_PATH", "/app/data")
-PATIENT_DATA_PATH = os.path.join(r"C:\Users\phili\epilepsy_mlops\data\patients\patients_data.csv")
-OUTPUT_PATH = os.path.join(r"C:\Users\phili\epilepsy_mlops\data\patients\patients_data_updated.csv")
+PATIENT_DATA_PATH = os.getenv("PATIENT_DATA_PATH", "/app/data/patients/patients_data.csv")
+OUTPUT_PATH = os.getenv("OUTPUT_PATH", "/app/data/patients_inference/patients_data_updated.csv")
 
 print(f"📂 Reading patient data from: {PATIENT_DATA_PATH}")
 

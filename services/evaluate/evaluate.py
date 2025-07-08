@@ -1,11 +1,27 @@
 import os
+import shutil
 import mlflow
 from mlflow.tracking import MlflowClient
+from mlflow.exceptions import RestException
 
-EXPERIMENT_NAME = "Default"
+EXPERIMENT_NAME = "epilepsy_training"
 MODEL_NAME = "epilepsy_model"
 METRIC_NAME = "val_accuracy"
 PRODUCTION_DIR = "production"
+
+def clear_folder(folder_path):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path, exist_ok=True)
+        return
+    for filename in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)  # remove file or link
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print(f"⚠️ Failed to delete {file_path}. Reason: {e}")
 
 def get_best_run(experiment_id, client):
     runs = client.search_runs(
@@ -16,53 +32,37 @@ def get_best_run(experiment_id, client):
     )
     return runs[0] if runs else None
 
-def get_production_model_metric(model_name, client):
-    versions = client.get_latest_versions(model_name, stages=["Production"])
-    if not versions:
-        return None, None
-    version = versions[0]
-    run = client.get_run(version.run_id)
-    metric = run.data.metrics.get(METRIC_NAME)
-    return metric, version
+def get_latest_registered_model(client):
+    try:
+        versions = client.get_latest_versions(MODEL_NAME, stages=["None", "Production", "Staging"])
+        if versions:
+            # Return version with the highest version number
+            return sorted(versions, key=lambda v: int(v.version))[-1]
+        return None
+    except RestException:
+        return None
 
-def register_model(run, model_name):
-    model_uri = f"runs:/{run.info.run_id}/model"
-    result = mlflow.register_model(model_uri, model_name)
+def get_metric_from_run(client, run_id, metric_name):
+    run = client.get_run(run_id)
+    return run.data.metrics.get(metric_name, None)
+
+def register_model(run_id):
+    model_uri = f"runs:/{run_id}/model"
+    result = mlflow.register_model(model_uri, MODEL_NAME)
     print(f"✅ Registered new model version: {result.version}")
-    return result  # Return full ModelVersion object
+    return result
 
-def promote_model_if_better(new_metric, new_version_number, current_metric, client):
-    if current_metric is None or new_metric > current_metric:
-        client.transition_model_version_stage(
-            name=MODEL_NAME,
-            version=new_version_number,
-            stage="Production",
-            archive_existing_versions=True,
-        )
-        print(f"🚀 Promoted model version {new_version_number} to Production (val_accuracy: {new_metric})")
-        return True
-    else:
-        print(f"⚠️ New model (val_accuracy: {new_metric}) is not better than current Production (val_accuracy: {current_metric}) — not promoted.")
-        return False
-
-def save_production_model_to_dvc(model_name, version_obj, dest_path=PRODUCTION_DIR, client=None):
-    if os.path.exists(dest_path):
-        for root, dirs, files in os.walk(dest_path):
-            for f in files:
-                os.remove(os.path.join(root, f))
-            for d in dirs:
-                os.rmdir(os.path.join(root, d))
-    else:
-        os.makedirs(dest_path, exist_ok=True)
-
+def save_model_artifact(version_obj, client, dest_path=PRODUCTION_DIR):
+    clear_folder(dest_path)
     print(f"⬇️ Downloading model version {version_obj.version} to '{dest_path}'")
-    # ✅ Use the correct artifact path
-    client.download_artifacts(run_id=version_obj.run_id, path="epilepsy_model", dst_path=dest_path)
+    client.download_artifacts(run_id=version_obj.run_id, path="model", dst_path=dest_path)
     print(f"✅ Model saved to '{dest_path}'")
 
-
 if __name__ == "__main__":
-    mlflow.set_tracking_uri("http://127.0.0.1:5000")  # Update if using remote tracking server
+    mlflow_tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
+    mlflow.set_tracking_uri(mlflow_tracking_uri)
+    print(f"📡 Using MLflow Tracking URI: {mlflow_tracking_uri}")
+
     client = MlflowClient()
 
     experiment = client.get_experiment_by_name(EXPERIMENT_NAME)
@@ -75,18 +75,23 @@ if __name__ == "__main__":
         print("❌ No successful runs found.")
         exit(1)
 
-    best_metric = best_run.data.metrics.get(METRIC_NAME)
-    print(f"🔍 Best run: {best_run.info.run_id} with {METRIC_NAME}: {best_metric}")
+    best_val_accuracy = best_run.data.metrics.get(METRIC_NAME)
+    print(f"🔍 Best run: {best_run.info.run_id} with {METRIC_NAME}: {best_val_accuracy:.4f}")
 
-    current_metric, current_version = get_production_model_metric(MODEL_NAME, client)
-    if current_metric:
-        print(f"📦 Current production version: {current_version.version} with {METRIC_NAME}: {current_metric}")
+    current_registered_model = get_latest_registered_model(client)
+
+    if current_registered_model is None:
+        print("📦 No registered model found. Registering best run.")
+        new_version = register_model(best_run.info.run_id)
+        save_model_artifact(new_version, client)
     else:
-        print("ℹ️ No production model yet.")
+        current_val_accuracy = get_metric_from_run(client, current_registered_model.run_id, METRIC_NAME)
+        print(f"📌 Current registered model version: {current_registered_model.version} with {METRIC_NAME}: {current_val_accuracy:.4f}")
 
-    new_model_version = register_model(best_run, MODEL_NAME)
-
-    promote_model_if_better(best_metric, new_model_version.version, current_metric, client)
-
-    # Always download best model for DVC tracking
-    save_production_model_to_dvc(MODEL_NAME, new_model_version, PRODUCTION_DIR, client)
+        if best_val_accuracy > current_val_accuracy:
+            print("🔥 New model is better! Registering as new version.")
+            new_version = register_model(best_run.info.run_id)
+            save_model_artifact(new_version, client)
+        else:
+            print("👍 Registered model is still the best. No update made.")
+            save_model_artifact(current_registered_model, client)

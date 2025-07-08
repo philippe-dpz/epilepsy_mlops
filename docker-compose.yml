@@ -1,0 +1,97 @@
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:latest
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow/mlruns  
+    working_dir: /mlflow
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlruns/mlflow.db
+      --default-artifact-root /mlflow/mlruns
+    networks:
+      - mlflow-net
+
+  model_training:
+    build: ./services/model_training
+    depends_on:
+      - mlflow
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./metrics:/app/metrics
+      - ./mlruns:/mlflow/mlruns  
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    command: [
+      "python", "train.py",
+      "--data_path", "/app/data/processed",
+      "--model_path", "/mlflow/mlruns/epilepsy_model.keras",
+      "--metrics_path", "/mlflow/mlruns/model_metrics.json",
+      "--epochs", "10",
+      "--batch_size", "15"
+    ]
+    networks:
+      - mlflow-net
+
+
+  preprocessing:
+    build: ./services/preprocessing
+    volumes:
+      - ./data/raw:/app/data/raw
+      - ./data/processed:/app/data/processed
+      - ./data/patients:/app/data/patients
+
+  patient_data_pull:
+    build: ./services/patient_data_pull
+    volumes:
+      - ./data/patients:/app/data/patients
+      - ./data/patients_inference:/app/data/patients_inference
+
+  evaluate:
+    build: ./services/evaluate
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./production:/app/production
+      - ./mlruns:/mlflow/mlruns 
+    networks:
+      - mlflow-net
+  auth_api:
+    build: ./services/authentication
+    ports:
+      - "8000:8000"
+    networks:
+      - mlflow-net
+    environment:
+      - SECRET_KEY=your_secret_key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    
+  inference_api:
+    build: ./services/inference
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data:/app/data
+      - ./production:/app/production
+    networks:
+      - mlflow-net
+    environment:
+      - DATA_PATH=/app/data
+      - MODEL_PATH=/app/production/model/data/model.keras
+      - SECRET_KEY=your_secret_key
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+networks:
+  mlflow-net:
+    driver: bridge

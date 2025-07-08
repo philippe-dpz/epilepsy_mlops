@@ -11,13 +11,14 @@ import os
 
 
 # Use raw strings (r"") to avoid backslash issues
-RAW_DATA_PATH = r"C:\Users\phili\epilepsy_mlops\data\raw\Epileptic Seizure Recognition.csv"
-PROCESSED_X_TRAIN_PATH = r"C:\Users\phili\epilepsy_mlops\data\processed\X_train.npy"
-PROCESSED_Y_TRAIN_PATH = r"C:\Users\phili\epilepsy_mlops\data\processed\Y_train.npy"
-PROCESSED_X_TEST_PATH = r"C:\Users\phili\epilepsy_mlops\data\processed\X_test.npy"
-PROCESSED_Y_TEST_PATH = r"C:\Users\phili\epilepsy_mlops\data\processed\Y_test.npy"
-PATIENT_DATA_PATH = r"C:\Users\phili\epilepsy_mlops\data\patients\patients_data.csv"
+import os
 
+RAW_DATA_PATH = os.getenv("RAW_DATA_PATH", "/app/data/raw/Epileptic_Seizure_Recognition.csv")
+PROCESSED_X_TRAIN_PATH = os.getenv("PROCESSED_X_TRAIN_PATH", "/app/data/processed/X_train.npy")
+PROCESSED_Y_TRAIN_PATH = os.getenv("PROCESSED_Y_TRAIN_PATH", "/app/data/processed/Y_train.npy")
+PROCESSED_X_TEST_PATH = os.getenv("PROCESSED_X_TEST_PATH", "/app/data/processed/X_test.npy")
+PROCESSED_Y_TEST_PATH = os.getenv("PROCESSED_Y_TEST_PATH", "/app/data/processed/Y_test.npy")
+PATIENT_DATA_PATH = os.getenv("PATIENT_DATA_PATH", "/app/data/patients/patients_data.csv")
 
 
 # Create directories if they don't exist

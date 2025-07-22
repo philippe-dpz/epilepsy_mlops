@@ -6,7 +6,7 @@ BASE_DATA_PATH = os.getenv("DATA_PATH", "/app/data")
 PATIENT_DATA_PATH = os.getenv("PATIENT_DATA_PATH", "/app/data/patients/patients_data.csv")
 OUTPUT_PATH = os.getenv("OUTPUT_PATH", "/app/data/patients_inference/patients_data_updated.csv")
 
-print(f"📂 Reading patient data from: {PATIENT_DATA_PATH}")
+print(f" Reading patient data from: {PATIENT_DATA_PATH}")
 
 # Ensure output directory exists
 os.makedirs(os.path.dirname(OUTPUT_PATH), exist_ok=True)
@@ -28,6 +28,6 @@ df_patients = df_patients[cols]
 # Save updated file
 df_patients.to_csv(OUTPUT_PATH, index=False)
 
-print(f"✅ Patient data prepared and saved to: {OUTPUT_PATH}")
-print(f"📊 Total rows: {len(df_patients)}")
-print(f"👥 Number of patients: {df_patients['patient_id'].nunique()}")
+print(f" Patient data prepared and saved to: {OUTPUT_PATH}")
+print(f" Total rows: {len(df_patients)}")
+print(f" Number of patients: {df_patients['patient_id'].nunique()}")

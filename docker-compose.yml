@@ -1,4 +1,33 @@
 services:
+  prefect_server:
+    image: prefecthq/prefect:3.2.1-python3.11
+    command: prefect server start --host 0.0.0.0 --port 4200
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./prefect:/root/.prefect
+    networks:
+      - mlflow-net
+
+  prefect_orchestrator:
+    build: ./services/prefect_orchestrator
+    depends_on:
+      - prefect_server
+    command: python /app/services/prefect_orchestrator/run_flows.py
+    volumes:
+      - ./:/app       
+      - ./data:/app/data
+      - ./mlruns:/mlflow/mlruns
+    environment:
+      - PREFECT_API_URL=http://prefect_server:4200/api
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - AWS_ACCESS_KEY_ID=b0f89c64dcade7ba789272dd8e223d77fbbd1aa0
+      - AWS_SECRET_ACCESS_KEY=b0f89c64dcade7ba789272dd8e223d77fbbd1aa0
+      - AWS_DEFAULT_REGION=us-east-1
+    networks:
+      - mlflow-net
+
+
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
     ports:
@@ -14,7 +43,7 @@ services:
       --default-artifact-root /mlflow/mlruns
     networks:
       - mlflow-net
-
+  
   model_training:
     build: ./services/model_training
     depends_on:
@@ -92,6 +121,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+      
 networks:
   mlflow-net:
     driver: bridge

@@ -6,30 +6,27 @@ from jose import JWTError, jwt
 from fastapi.security import OAuth2PasswordBearer
 import hashlib
 
-# SECRET for JWT (keep this secret in env vars in real apps)
-SECRET_KEY = "your_secret_key"  # Make sure this matches inference API
+SECRET_KEY = "your_secret_key"  
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 app = FastAPI()
 
-# Add CORS middleware to allow requests from inference API and other origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, be more specific
+    allow_origins=["*"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Simple password hashing for demo (use proper hashing in production)
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode()).hexdigest()
 
 fake_users_db = {
     "alice": {
-        "username": "alice",
-        "password": hash_password("secret")  # Store hashed password
+        "username": "doc",
+        "password": hash_password("secret") 
     }
 }
 
@@ -60,7 +57,6 @@ def login(data: LoginRequest):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-# OAuth2 scheme for this API's protected routes
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
@@ -81,7 +77,6 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
 def protected_route(current_user: dict = Depends(get_current_user)):
     return {"message": f"Hello, {current_user['username']}! This is protected."}
 
-# Add a token validation endpoint that the inference API can use
 @app.post("/validate-token")
 def validate_token(token: str):
     try:

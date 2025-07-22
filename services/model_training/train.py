@@ -68,18 +68,14 @@ def main(args):
         mlflow.log_metric("final_train_loss", history.history["loss"][-1])
         mlflow.log_metric("final_val_loss", history.history["val_loss"][-1])
 
-        # Save model locally in a safe folder
         os.makedirs(os.path.dirname(args.model_path), exist_ok=True)
-        print(f"💾 Saving model to {args.model_path}")
+        print(f"Saving model to {args.model_path}")
         model.save(args.model_path)
 
-        # Log model in MLflow format (this creates the standard MLflow "model" artifact folder)
         mlflow.keras.log_model(model)
 
-        # Also log the saved keras model file as artifact (so you see epilepsy_model.keras file/folder in UI)
         mlflow.log_artifact(args.model_path, artifact_path="keras_model_file")
 
-        # Save and log metrics JSON
         metrics = {
             "train_accuracy": history.history["accuracy"][-1],
             "val_accuracy": history.history["val_accuracy"][-1],
@@ -95,7 +91,7 @@ def main(args):
 
         mlflow.log_artifact(args.metrics_path, artifact_path="metrics")
 
-        print("✅ Training complete and artifacts logged to MLflow")
+        print("Training complete and artifacts logged to MLflow")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

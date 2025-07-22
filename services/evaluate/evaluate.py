@@ -17,11 +17,11 @@ def clear_folder(folder_path):
         file_path = os.path.join(folder_path, filename)
         try:
             if os.path.isfile(file_path) or os.path.islink(file_path):
-                os.unlink(file_path)  # remove file or link
+                os.unlink(file_path)
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except Exception as e:
-            print(f"⚠️ Failed to delete {file_path}. Reason: {e}")
+            print(f"Failed to delete {file_path}. Reason: {e}")
 
 def get_best_run(experiment_id, client):
     runs = client.search_runs(
@@ -36,7 +36,6 @@ def get_latest_registered_model(client):
     try:
         versions = client.get_latest_versions(MODEL_NAME, stages=["None", "Production", "Staging"])
         if versions:
-            # Return version with the highest version number
             return sorted(versions, key=lambda v: int(v.version))[-1]
         return None
     except RestException:
@@ -52,11 +51,23 @@ def register_model(run_id):
     print(f"✅ Registered new model version: {result.version}")
     return result
 
+def promote_model_to_production(client, model_name, version):
+    try:
+        client.transition_model_version_stage(
+            name=model_name,
+            version=version,
+            stage="Production",
+            archive_existing_versions=True  # Auto-archive previous ones
+        )
+        print(f"🚀 Model version {version} promoted to 'Production'")
+    except Exception as e:
+        print(f"❌ Failed to promote model to Production: {e}")
+
 def save_model_artifact(version_obj, client, dest_path=PRODUCTION_DIR):
     clear_folder(dest_path)
-    print(f"⬇️ Downloading model version {version_obj.version} to '{dest_path}'")
+    print(f"⬇ Downloading model version {version_obj.version} to '{dest_path}'")
     client.download_artifacts(run_id=version_obj.run_id, path="model", dst_path=dest_path)
-    print(f"✅ Model saved to '{dest_path}'")
+    print(f"📁 Model saved to '{dest_path}'")
 
 if __name__ == "__main__":
     mlflow_tracking_uri = os.environ.get("MLFLOW_TRACKING_URI", "http://127.0.0.1:5000")
@@ -83,14 +94,17 @@ if __name__ == "__main__":
     if current_registered_model is None:
         print("📦 No registered model found. Registering best run.")
         new_version = register_model(best_run.info.run_id)
+        promote_model_to_production(client, MODEL_NAME, new_version.version)
         save_model_artifact(new_version, client)
+
     else:
         current_val_accuracy = get_metric_from_run(client, current_registered_model.run_id, METRIC_NAME)
         print(f"📌 Current registered model version: {current_registered_model.version} with {METRIC_NAME}: {current_val_accuracy:.4f}")
 
         if best_val_accuracy > current_val_accuracy:
-            print("🔥 New model is better! Registering as new version.")
+            print("✅ New model is better! Registering and promoting as new version.")
             new_version = register_model(best_run.info.run_id)
+            promote_model_to_production(client, MODEL_NAME, new_version.version)
             save_model_artifact(new_version, client)
         else:
             print("👍 Registered model is still the best. No update made.")

@@ -9,7 +9,7 @@ import logging
 # Mock environment variables to avoid dependency on actual file system
 @pytest.fixture(scope="module")
 def mock_env_vars():
-    os.environ["RAW_DATA_PATH"] = "data/raw/Epileptic Seizure Recognition.csv"
+    os.environ["RAW_DATA_PATH"] = "data/raw/Epileptic_Seizure_Recognition.csv"
     os.environ["PROCESSED_X_TRAIN_PATH"] = "data/processed/X_train.npy"
     os.environ["PROCESSED_Y_TRAIN_PATH"] = "data/processed/Y_train.npy"
     os.environ["PROCESSED_X_TEST_PATH"] = "data/processed/X_test.npy"

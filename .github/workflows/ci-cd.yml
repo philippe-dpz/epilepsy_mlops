@@ -29,17 +29,20 @@ jobs:
 
     - name: 3. Installation des dépendances globales et de test
       run: |
-        echo "--- Installation des dépendances Python ---"
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        # Installation des dépendances spécifiques à chaque service
-        pip install -r services/authentication/requirements.txt
-        pip install -r services/inference/requirements.txt
-        pip install -r services/patient_data_pull/requirements.txt
-        pip install -r services/prefect_orchestrator/requirements.txt
-        # Dépendances de test
-        pip install pytest pytest-mock httpx
-        echo "--- Dépendances installées avec succès ---"
+          echo "--- Installation des dépendances Python ---"
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          # Installation des dépendances spécifiques à chaque service
+          pip install -r services/authentication/requirements.txt
+          pip install -r services/evaluate/requirements.txt
+          pip install -r services/inference/requirements.txt
+          pip install -r services/model_training/requirements.txt
+          pip install -r services/patient_data_pull/requirements.txt
+          pip install -r services/preprocessing/requirements.txt
+          pip install -r services/prefect_orchestrator/requirements.txt
+          # Dépendances de test
+          pip install pytest pytest-mock httpx
+          echo "--- Dépendances installées avec succès ---"
 
     - name: 4. Lancer les tests avec Pytest
       run: |

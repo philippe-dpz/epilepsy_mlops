@@ -44,6 +44,15 @@ jobs:
           pip install pytest pytest-mock httpx
           echo "--- Dépendances installées avec succès ---"
 
+    - name: Install DVC with S3 support
+      run: pip install dvc[s3]
+
+    - name: Pull DVC data from DagsHub
+      run: dvc pull
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.DAGSHUB_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.DAGSHUB_SECRET_ACCESS_KEY }}
+
     - name: 4. Lancer les tests avec Pytest
       run: |
         echo "--- Démarrage des tests unitaires ---"

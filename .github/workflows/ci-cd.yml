@@ -109,20 +109,3 @@ jobs:
     - name: 11. Pipeline CI/CD terminé
       run: echo "--- Toutes les images Docker ont été construites et poussées avec succès sur Docker Hub ---"
 
-  deploy:
-    needs: build_and_push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: 1. Se connecter au serveur distant et déployer
-      uses: appleboy/ssh-action@v0.1.6
-      with:
-        host: ${{ secrets.REMOTE_HOST }}
-        username: ${{ secrets.REMOTE_USER }}
-        key: ${{ secrets.REMOTE_SSH_KEY }}
-        port: ${{ secrets.REMOTE_SSH_PORT }} 
-        script: |
-          cd ~/epilepsy-mlops
-          git pull origin main
-          bash ./start.sh

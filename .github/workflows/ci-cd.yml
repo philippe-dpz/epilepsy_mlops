@@ -1,0 +1,116 @@
+name: CI/CD Pipeline for Epilepsy MLOps
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  # Job 1: Lancer les tests unitaires
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+    - name: 1. Checkout du code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Nécessaire pour les opérations Git qui pourraient être utilisées par DVC ou MLflow
+
+    - name: 2. Mise en place de Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: 3. Installation des dépendances globales et de test
+      run: |
+        echo "--- Installation des dépendances Python ---"
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        # Installation des dépendances spécifiques à chaque service
+        pip install -r services/authentication/requirements.txt
+        pip install -r services/inference/requirements.txt
+        pip install -r services/patient_data_pull/requirements.txt
+        pip install -r services/prefect_orchestrator/requirements.txt
+        # Dépendances de test
+        pip install pytest pytest-mock httpx
+        echo "--- Dépendances installées avec succès ---"
+
+    - name: 4. Lancer les tests avec Pytest
+      run: |
+        echo "--- Démarrage des tests unitaires ---"
+        pytest tests/
+        echo "--- Tests unitaires terminés ---"
+
+  # Job 2: Construire et publier les images Docker
+  build_and_push:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Checkout du code
+      uses: actions/checkout@v4
+
+    - name: 2. Connexion à Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: 3. Affichage du message de connexion
+      run: echo "Connecté à Docker Hub en tant que ${{ secrets.DOCKERHUB_USERNAME }}"
+
+    - name: 4. Construire et publier l'image 'authentication'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/authentication
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/epilepsy-authentication:latest
+
+    - name: 6. Construire et publier l'image 'inference'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/inference
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/epilepsy-inference:latest
+
+    - name: 8. Construire et publier l'image 'patient_data_pull'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/patient_data_pull
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/epilepsy-patient_data_pull:latest
+
+    - name: 10. Construire et publier l'image 'prefect_orchestrator'
+      uses: docker/build-push-action@v5
+      with:
+        context: ./services/prefect_orchestrator
+        push: true
+        tags: ${{ secrets.DOCKERHUB_USERNAME }}/epilepsy-prefect_orchestrator:latest
+
+    - name: 11. Pipeline CI/CD terminé
+      run: echo "--- Toutes les images Docker ont été construites et poussées avec succès sur Docker Hub ---"
+
+  deploy:
+    needs: build_and_push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 1. Se connecter au serveur distant et déployer
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.REMOTE_SSH_KEY }}
+        port: ${{ secrets.REMOTE_SSH_PORT }} 
+        script: |
+          cd ~/epilepsy-mlops
+          git pull origin main
+          bash ./start.sh

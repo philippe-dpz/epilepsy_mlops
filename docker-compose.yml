@@ -10,12 +10,12 @@ services:
       - mlflow-net
 
   prefect_orchestrator:
-    build: ./services/prefect_orchestrator
+    image: philippedpz/epilepsy-prefect_orchestrator:latest
     depends_on:
       - prefect_server
     command: python /app/services/prefect_orchestrator/run_flows.py
     volumes:
-      - ./:/app       
+      - ./services/prefect_orchestrator:/app     
       - ./data:/app/data
       - ./mlruns:/mlflow/mlruns
     environment:
@@ -26,7 +26,6 @@ services:
       - AWS_DEFAULT_REGION=us-east-1
     networks:
       - mlflow-net
-
 
   mlflow:
     image: ghcr.io/mlflow/mlflow:latest
@@ -45,13 +44,13 @@ services:
       - mlflow-net
 
   patient_data_pull:
-    build: ./services/patient_data_pull
+    image: philippedpz/epilepsy-patient_data_pull:latest
     volumes:
       - ./data/patients:/app/data/patients
       - ./data/patients_inference:/app/data/patients_inference
 
   auth_api:
-    build: ./services/authentication
+    image: philippedpz/epilepsy-authentication:latest
     ports:
       - "8000:8000"
     networks:
@@ -66,7 +65,7 @@ services:
       retries: 3
 
   inference_api:
-    build: ./services/inference
+    image: philippedpz/epilepsy-inference:latest
     ports:
       - "8001:8001"
     volumes:
@@ -78,7 +77,7 @@ services:
       - monitoring-net
     environment:
       - DATA_PATH=/app/data
-      - MLFLOW_TRACKING_URI=http://mlflow:5000 # URI de MLflow
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
       - MODEL_PATH=/app/production/model/data/model.keras
       - SECRET_KEY=your_secret_key
     healthcheck:
@@ -116,8 +115,8 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_HTTP_PORT=3002
 
-      
 networks:
   mlflow-net:
     driver: bridge

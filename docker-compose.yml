@@ -13,9 +13,9 @@ services:
     image: philippedpz/epilepsy-prefect_orchestrator:latest
     depends_on:
       - prefect_server
-    command: python /app/services/prefect_orchestrator/run_flows.py
+    command: python /app/services/prefect_orchestrator/run_flows.py  # Changed this path
     volumes:
-      - ./services/prefect_orchestrator:/app     
+      - ./:/app       
       - ./data:/app/data
       - ./mlruns:/mlflow/mlruns
     environment:

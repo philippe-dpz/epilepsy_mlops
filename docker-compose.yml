@@ -50,7 +50,8 @@ services:
       - ./data/patients_inference:/app/data/patients_inference
 
   auth_api:
-    image: philippedpz/epilepsy-authentication:latest
+    image: epilepsy-authentication:latest
+    build: ./services/authentication
     ports:
       - "8000:8000"
     networks:
@@ -65,7 +66,8 @@ services:
       retries: 3
 
   inference_api:
-    image: philippedpz/epilepsy-inference:latest
+    image: epilepsy-inference:latest
+    build: ./services/inference
     ports:
       - "8001:8001"
     volumes:
